@@ -96,7 +96,7 @@ async function readPending(): Promise<Task[]> {
   for (const line of (await readFile(TASK_LOG, "utf8")).split("\n").filter(Boolean)) {
     try { const task = JSON.parse(line) as Task; latest.set(task.id, task); } catch { /* tolerate partial final line */ }
   }
-  return [...latest.values()].filter(task => task.status === "queued");
+  return [...latest.values()].filter(task => task.status === "queued" || task.status === "running").map(task => task.status === "running" ? { ...task, status: "queued" as const } : task);
 }
 async function scanInbox() {
   for (const name of await readdir(INBOX)) {
