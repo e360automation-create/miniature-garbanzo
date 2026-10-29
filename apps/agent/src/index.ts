@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { readFile, appendFile, mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
