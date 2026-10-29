@@ -1,8 +1,11 @@
+.env
+.env.*
+!.env.example
 node_modules/
 dist/
 target/
-.env
-.data/
 data/
+workspace/*
+!workspace/.gitkeep
 *.log
 .DS_Store
