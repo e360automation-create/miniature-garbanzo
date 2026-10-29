@@ -1,5 +1,5 @@
 export type ToolCall = { id: string; name: string; input: Record<string, unknown> };
-type ContentBlock = { type: string; text?: string; id?: string; name?: string; input?: Record<string, unknown> };
+type ContentBlock = { type: string; text?: string; content?: string; id?: string; name?: string; input?: Record<string, unknown> };
 type Message = { role: "user" | "assistant"; content: string | ContentBlock[] };
 const API_URL = "https://api.anthropic.com/v1/messages";
 const tools = [
@@ -36,7 +36,7 @@ export async function askClaudeWithTools(prompt: string, execute: (name: string,
       let result: string;
       try { result = await execute(call.name, call.input ?? {}); }
       catch (error) { result = "TOOL ERROR: " + (error instanceof Error ? error.message : String(error)); }
-      results.push({ type: "tool_result", id: call.id, text: result });
+      results.push({ type: "tool_result", id: call.id, content: result });
     }
     messages.push({ role: "user", content: results });
   }
