@@ -1,37 +1,51 @@
-# Miniature Garbanzo
+# Miniature Garbanzo — local-first always-on agent
 
-A local-first, always-on AI agent built with TypeScript and Rust. It runs its scheduler, task queue, local tools, and policy checks on your machine. Claude is an optional escalation provider: no Claude API request is made unless a task is explicitly escalated or the local agent determines it cannot safely complete a task with configured local capabilities.
-
-## Principles
-
-- **Local by default:** planning, timers, task state, logs, and local tools run on-device.
-- **Explicit cloud escalation:** Claude calls are opt-in per task or enabled by policy; disclose the reason and send only the minimum task context.
-- **Safe execution:** tool allowlists, approval gates for destructive/external actions, bounded retries, and audit logs.
-- **Inspired by agent patterns, not copied code:** use public ideas such as task queues, tool registries, persistent memory, heartbeat loops, and human approval gates. Do not clone proprietary implementations or copy licenses/code without review.
-
-## Architecture
-
-- `apps/agent` — TypeScript orchestration, scheduler, task state, and Claude adapter.
-- `crates/agent-core` — Rust local runtime for policy checks and bounded tool execution.
-- `data/` — local state (ignored by git).
-- Claude integration uses the official Anthropic Messages API only when escalation is requested and `ANTHROPIC_API_KEY` is configured.
-
-## Requirements
-
-- Node.js 20+
-- Rust stable toolchain
-- Optional: Anthropic API key (only for cloud escalation)
+A local agent that stays running, keeps a durable task log, watches an inbox, and can use Claude as an on-demand reasoning engine. The scheduler and filesystem tools run locally. No Anthropic request is made for startup, heartbeat, status, list, or read commands; Claude is contacted only when a queued task needs reasoning and `ANTHROPIC_API_KEY` is configured.
 
 ## Quick start
 
-```sh
-cp .env.example .env
+Requirements: Node.js 20+ and npm. Rust stable is needed only for the optional Rust policy core.
+
+```bash
+git clone https://github.com/e360automation-create/miniature-garbanzo.git
+cd miniature-garbanzo
 npm install
+cp .env.example .env
 npm run dev
 ```
 
-Without `ANTHROPIC_API_KEY`, the local agent still starts and runs local tasks; Claude escalation returns a clear configuration error. Never commit `.env`.
+Windows PowerShell: use `Copy-Item .env.example .env` instead of `cp`.
 
-## Current status
+Add your key later in `.env`:
 
-Initial scaffold. Local task persistence, OS-specific service installation, and richer local-model adapters are follow-up milestones. Run only with tools and permissions you understand.
+```dotenv
+ANTHROPIC_API_KEY=your_anthropic_api_key
+ANTHROPIC_MODEL=claude-sonnet-4-20250514
+AGENT_ALLOW_WRITES=false
+```
+
+Do not commit `.env`. It is ignored by Git. Without the key, the agent still runs locally and records AI tasks as `needs-claude`, without sending anything over the network.
+
+## Use it
+
+- Type a task to queue it for processing.
+- `/status` — show runtime/config status.
+- `/list [relative-path]` — list workspace files locally.
+- `/read <relative-path>` — read a workspace file locally.
+- `/help` — show commands.
+- `/quit` — stop the foreground process.
+- `/claude <task>` — queue a task that may use Claude; all ordinary tasks use the same policy and only call Claude when configured.
+- Drop a `.txt` or `.md` file into `data/inbox/` to have the background heartbeat pick it up.
+
+The agent persists task state in `data/tasks.jsonl` and confines file tools to `./workspace`. It does not run arbitrary shell commands. File reads are limited by `AGENT_MAX_FILE_BYTES`. File writes are disabled by default; set `AGENT_ALLOW_WRITES=true` only if you want Claude to create/modify files in the workspace. Review changes before using them.
+
+## Checks
+
+```bash
+npm run typecheck
+npm run rust:check
+```
+
+## Safety and current limits
+
+This is a useful local-first starter, not a magical autonomous operating-system administrator. It has a heartbeat, persistent queue, inbox watcher, and bounded Claude tool-use loop. It does not yet install itself as a Windows service or macOS/Linux daemon; keep the process running for continuous operation. Claude calls incur Anthropic usage charges. Do not put credentials or sensitive documents in the workspace unless you accept that relevant task context may be sent to Anthropic when a task is escalated.
