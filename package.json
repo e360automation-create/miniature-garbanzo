@@ -9,6 +9,9 @@
     "typecheck": "tsc --noEmit",
     "rust:check": "cargo check --manifest-path crates/agent-core/Cargo.toml"
   },
+  "dependencies": {
+    "dotenv": "^16.4.7"
+  },
   "devDependencies": {
     "@types/node": "^22.10.0",
     "tsx": "^4.19.2",
